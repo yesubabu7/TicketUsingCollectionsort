@@ -5,7 +5,7 @@ class Ticket {
 	int trainNo;
 	String srcStation, destStation, travelDate, ticketClass;
 	float totalfare;
-	static int size;
+	int size;
     //TreeSet<Passenger> a=new TreeSet<Passenger>();
     
 	ArrayList<Passenger> passDetails;
@@ -32,11 +32,12 @@ class Ticket {
 					p.getName() + " " + p.getAge() + " " + p.getGender() + " " + p.getPrefBerth() + " " + p.ticketCost);
 					//a.add((p));
 					this.totalfare+=p.ticketCost;
+					size+=1;
 				
 					
 					
 		}
-		System.out.println(this.totalfare);
+		
 		
 		
 	}
@@ -121,7 +122,7 @@ public class Main {
 		ArrayList<Passenger> pd=new ArrayList<Passenger>();
 		pd.addAll(Arrays.asList(p1, p2, p3, p4, p5));
 		// Passenger pd[] = { p1, p2, p3, p4, p5 };
-		Ticket t1 = new Ticket(101, "Vzg", "Tpg", "24-03-2023", "AC", pd);
+		Ticket t1 = new Ticket(110, "Vzg", "Tpg", "24-03-2023", "AC", pd);
 		//t1.displayDetails();
 		ArrayList<Passenger> pd1=new ArrayList<Passenger>();
 		
@@ -139,23 +140,19 @@ public class Main {
         Collections.sort(tt,new Mycomparator());
         
 	for(Ticket t:tt){
-		//t.displayDetails();
-		System.out.println(t.totalfare);
+		t.displayDetails();
+		//System.out.println(t.totalfare); //work
+		//System.out.println(t.size); 
 	}
 }
 }
-class Mycomparator implements Comparator{
-    public int compare(Object ob1,Object ob2){
-        Ticket s1=(Ticket)ob1;
-        Ticket s2=(Ticket)ob2;
-        /*Float i1=(Float)s1.totalfare;
-        Float i2=(Float)s2.totalfare;
-        return i1.compareTo(i2);
-        */
-         Integer i1=(Integer)s1.size;
-         Integer i2=(Integer)s2.size;
+class Mycomparator implements Comparator<Ticket>{
+    public int compare(Ticket ob1,Ticket ob2){
         
-         return i1.compareTo(i2);
+         Integer i1=(Integer)ob1.trainNo;
+         Integer i2=(Integer)ob2.trainNo;
+        //System.out.println(ob1.size+"work"); 
+        return i1.compareTo(i2);
         }
     
    
