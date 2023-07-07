@@ -18,6 +18,7 @@ class Ticket {
 		this.travelDate = travelDate;
 		this.ticketClass = ticketClass;
 		this.passDetails = pd;
+		calculateTotalfare();
 	
 	}
 	public void displayDetails() {
@@ -31,17 +32,23 @@ class Ticket {
 			System.out.println(
 					p.getName() + " " + p.getAge() + " " + p.getGender() + " " + p.getPrefBerth() + " " + p.ticketCost);
 					//a.add((p));
-					totalfare+=p.ticketCost;
-					
-					size+=1;
+			// totalfare+=p.ticketCost;   write outside because it calls after sorting then totalfare value increase
+					// size+=1; same above like that
 
 		}
-		System.out.println(this.totalfare+"haworked");
+		System.out.println("TotalFare\t"+totalfare);
 		
 		
 		
 	}
+	void calculateTotalfare(){
+	    for (Passenger p : passDetails){
+			totalfare+=p.ticketCost;
+	    
+	}
 
+
+}
 }
 class Passenger {
 	static float basePrice = 350;
@@ -98,16 +105,6 @@ public String getName() {
 		this.prefBerth = prefBerth;
 	}
 }
-/*class PassengerDetails extends ArrayList<Passenger> {
-
-	@Override
-	public String toString() {
-		// TODO Auto-generated method stub
-		return "Haii vamsi thanku ";
-	}
-
-}
-*/
 public class Main {
 	public static void main(String[] args) {
 		Scanner sc = new Scanner(System.in);
@@ -123,7 +120,8 @@ public class Main {
 		pd.addAll(Arrays.asList(p1, p2, p3, p4, p5));
 		// Passenger pd[] = { p1, p2, p3, p4, p5 };
 		Ticket t1 = new Ticket(110, "Vzg", "Tpg", "24-03-2023", "AC", pd);
-		//t1.displayDetails();
+		System.out.println("Before  sorting based on TotalFare The Details Are\n");
+		t1.displayDetails();
 		ArrayList<Passenger> pd1=new ArrayList<Passenger>();
 		
 		Passenger p11 = new Passenger("p11", 90, 'f', "Lower");
@@ -132,32 +130,29 @@ public class Main {
 		Passenger p14 = new Passenger("p14", 59, 'm', "Upper");
 		pd1.addAll(Arrays.asList(p11,p12,p13,p14));
 		Ticket t2 = new Ticket(103, "mumbai", "macherla", "02-07-2022", "Ac", pd1);
-        //t2.displayDetails();
+        t2.displayDetails();
        
         ArrayList<Ticket> tt=new ArrayList<>();
         tt.addAll(Arrays.asList(t1,t2));
         //Collections.sort(tt);
         Collections.sort(tt,new Mycomparator());
-        
+        System.out.println("After sorting based on TotalFare The Details Are\n");
 	for(Ticket t:tt){
 		t.displayDetails();
-		//System.out.println(t.totalfare); //work
+		//System.out.println(t.totalfare+"This is totalfare\n"); //work
 		//System.out.println(t.size); 
 	}
 }
 }
 class Mycomparator implements Comparator<Ticket>{
     public int compare(Ticket ob1,Ticket ob2){
-           System.out.println(ob1.trainNo+"it worked");
-           System.out.println(ob1.size+"it not work"); 
-         Integer i1=(Integer)ob1.trainNo;
-         Integer i2=(Integer)ob2.trainNo;
-        System.out.println(ob1.totalfare+"it not work"); 
+         
+         Float i1=(Float)ob1.totalfare;
+         Float i2=(Float)ob2.totalfare;
+        //System.out.println(ob1.totalfare); 
       
         return i1.compareTo(i2);
         }
     
-   
 }
-
 
