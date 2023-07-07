@@ -1,0 +1,26 @@
+//import java.util.*;
+import java.io.*;
+public class Main
+{
+	public static void main(String[] args) {
+	    try{
+	        String s="";
+	        File f=new File("yes.txt");
+	     FileInputStream f1=new FileInputStream(f);
+	     BufferedInputStream b=new BufferedInputStream(f1);
+	     while (b.available()>0) {
+	         s+=(char)b.read();
+	        
+	     }
+	      System.out.println(s);
+	   }
+	   
+	    catch (IOException e) {
+			e.printStackTrace();
+	     
+	
+	}
+		//f1.close();
+	
+}
+}
