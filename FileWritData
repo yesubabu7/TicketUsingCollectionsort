@@ -1,0 +1,34 @@
+import java.util.*;
+import java.io.*;
+public class Main
+{
+	public static void main(String[] args) {
+	    try{
+	        String s;
+	        File f1=new File("yes.txt");
+	     //FileInputStream f1=new FileInputStream(f);
+	     FileWriter f=new FileWriter(f1);
+	     BufferedWriter b1=new BufferedWriter(f);
+	     s="yesu and mahitha both are looking so cute...god bleess you";
+	     while (true) {
+	          
+	         b1.write(s);
+	         System.out.println("added data successfully");
+	         
+	         
+	         break;
+	        
+	     }
+	     b1.close();
+	     
+	   }
+	   
+	    catch (IOException e) {
+			e.printStackTrace();
+	     
+	
+	}
+		//f1.close();
+	
+}
+}
