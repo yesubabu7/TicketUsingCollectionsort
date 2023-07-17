@@ -3,7 +3,7 @@ import java.io.*;
 import java.io.IOException;
 import java.util.*;
 
-class Employee {
+class Employee implements  Serializable{
     private int id;
     private String name;
     private String designation;
@@ -105,12 +105,40 @@ public class Main {
             maxSalary=employee.getSalary();
             sumSalary+=employee.getSalary();
         }
-        System.out.println("min salary: " + minSalary);
+            System.out.println("min salary: " + minSalary);
             System.out.println("max salary: " + maxSalary);
 
             System.out.println("Total salary: " + sumSalary);
              System.out.println("Average salary: " + sumSalary/emp.size());
+             try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream("employees.ser"))) 
+             {
+            outputStream.writeObject(emp);
+            System.out.println("Employee collection serialized to employees.ser");
+        } catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        // Deserialize the ArrayList<Employee> collection from the file
+        try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream("employees.ser"))) {
+            ArrayList<Employee> deserializedEmployees = (ArrayList<Employee>) inputStream.readObject();
+            System.out.println("Employee collection deserialized from employees.ser");
+
+            // Display deserialized employee details
+            System.out.println("Display deserialized employee details:");
+            for (Employee employee : deserializedEmployees) {
+                System.out.println("ID: " + employee.getId());
+                System.out.println("Name: " + employee.getName());
+                System.out.println("Designation: " + employee.getDesignation());
+                System.out.println("Salary: " + employee.getSalary());
+                System.out.println("Experience: " + employee.getExperience());
+                System.out.println("------------------------");
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+             
     }
+}
 }
 class MyComparator implements Comparator<Employee>{
 /*
@@ -130,4 +158,3 @@ class MyComparator implements Comparator<Employee>{
     }
     
 }
-
