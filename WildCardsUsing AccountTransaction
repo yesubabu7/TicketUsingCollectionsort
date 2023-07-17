@@ -25,6 +25,158 @@ class SavingsAccount extends Account {
     }
 }
 
+
+*****************************************************************************************************************
+import java.util.ArrayList;
+import java.util.List;
+
+class Account {
+    private int balance = 0;
+    private double minBalence=Double.MAX_VALUE;
+    private double maxBalence=Double.MIN_VALUE;
+    private int accountNumber;
+    protected List<Transaction> transactions;
+
+    public Account(int accountNumber) {
+        this.accountNumber = accountNumber;
+        this.transactions = new ArrayList<>();
+    }
+
+    public int getAccountNumber() {
+        return accountNumber;
+    }
+    
+    public int getBalance() {
+        return balance;
+    }
+     public void deposit(double amount) {
+        
+        balance += amount;
+        if(minBalence>=balance){
+            minBalence=balance;
+        }
+        if(maxBalence<=balance){
+            maxBalence=balance;
+        }
+       
+    }
+    public double minBalence(){
+        return minBalence;
+    }
+    public double maxBalence(){
+        return maxBalence;
+    }
+    
+
+    public void withdraw(double amount) {
+        if (balance >= amount) 
+    {
+            balance -= amount;
+            if(minBalence>=balance)
+            {
+            minBalence=balance;
+            }
+        if(maxBalence<=balance)
+        {
+            maxBalence=balance;
+        }
+           
+    } 
+        else {
+            System.out.println("Insufficient balance.");
+        }
+    }
+
+    public void addTransaction(Transaction trans) {
+        double amt=trans.getAmount();
+        if(trans.getType().equals("withdraw"))
+        withdraw(amt);
+        else{
+            
+            deposit(amt);
+        }
+        transactions.add(trans);
+    }
+}
+
+class SavingsAccount extends Account {
+    public SavingsAccount(int accountNumber) {
+        super(accountNumber);
+    }
+}
+
+class CurrentAccount extends Account {
+    public CurrentAccount(int accountNumber) {
+        super(accountNumber);
+    }
+}
+
+class Transaction {
+    private String type;
+    private double amount;
+
+    public Transaction(String type, double amount) {
+        this.type = type;
+        this.amount = amount;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        SavingsAccount savingsAccount1 = new SavingsAccount(1);
+        SavingsAccount savingsAccount2 = new SavingsAccount(2);
+        CurrentAccount currentAccount1 = new CurrentAccount(3);
+
+        savingsAccount1.addTransaction(new Transaction("Deposit", 1000.0));
+        savingsAccount1.addTransaction(new Transaction("Withdraw", 300.0));
+        savingsAccount2.addTransaction(new Transaction("Deposit", 2000.0));
+        savingsAccount2.addTransaction(new Transaction("withdraw", 300.0));
+        currentAccount1.addTransaction(new Transaction("deposit", 1000.0));
+        currentAccount1.addTransaction(new Transaction("Withdraw", 900.0));
+
+        ArrayList<Account> accounts = new ArrayList<>();
+        accounts.add(savingsAccount1);
+        accounts.add(savingsAccount2);
+        accounts.add(currentAccount1);
+
+        displayBalanceProfile(accounts);
+    }
+
+    public static void displayBalanceProfile(ArrayList<? extends Account> accounts) {
+        for (Account account : accounts) {
+            System.out.println("Account Number: " + account.getAccountNumber());
+            System.out.println("Min Balance: " + account.minBalence());
+            System.out.println("Max Balance: " + account.maxBalence());
+            System.out.println("------------------------");
+        }
+    }
+
+     
+    
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class CurrentAccount extends Account {
     public CurrentAccount(int accountNumber) {
         super(accountNumber);
