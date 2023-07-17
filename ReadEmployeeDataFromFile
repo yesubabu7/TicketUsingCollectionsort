@@ -1,0 +1,100 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+
+class Employee {
+    private int id;
+    private String name;
+    private String designation;
+    private double salary;
+    private int experience;
+
+    public Employee(int id, String name, String designation, double salary, int experience) {
+        this.id = id;
+        this.name = name;
+        this.designation = designation;
+        this.salary = salary;
+        this.experience = experience;
+    }
+    
+    // Getter methods
+    public int getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDesignation() {
+        return designation;
+    }
+
+    public double getSalary() {
+        return salary;
+    }
+
+    public int getExperience() {
+        return experience;
+    }
+
+    // Getters and setters (omitted for brevity)
+
+    public static ArrayList<Employee> readEmployeeRecords() {
+        ArrayList<Employee> employees = new ArrayList<>();
+
+        try{
+            BufferedReader reader = new BufferedReader(new FileReader("emp.txt"));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                Employee employee = parseEmployeeRecord(line);
+                if (employee != null) {
+                    employees.add(employee);
+                }
+            }
+        } 
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return employees;
+    }
+
+    private static Employee parseEmployeeRecord(String record) {
+        String[] parts = record.split(":");
+        if (parts.length ==5) {
+            try {
+                int id = Integer.parseInt(parts[0]);
+                String name = parts[1];
+                String designation = parts[2];
+                double salary = Double.parseDouble(parts[3]);
+                int experience = Integer.parseInt(parts[4]);
+
+                return new Employee(id, name, designation, salary, experience);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+}
+
+
+public class Main {
+    public static void main(String[] args) {
+        // Read employee records into ArrayList
+        ArrayList<Employee> employees = Employee.readEmployeeRecords();
+
+        // Display employee details
+        for (Employee employee : employees) {
+            System.out.println("ID: " + employee.getId());
+            System.out.println("Name: " + employee.getName());
+            System.out.println("Designation: " + employee.getDesignation());
+            System.out.println("Salary: " + employee.getSalary());
+            System.out.println("Experience: " + employee.getExperience());
+            System.out.println("------------------------");
+        }
+    }
+}
+
