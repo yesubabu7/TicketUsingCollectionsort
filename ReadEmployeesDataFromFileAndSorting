@@ -9,7 +9,7 @@ class Employee {
     private String designation;
     private double salary;
     private int experience;
-
+   
     public Employee(int id, String name, String designation, double salary, int experience) {
         this.id = id;
         this.name = name;
@@ -83,18 +83,33 @@ class Employee {
 
 public class Main {
     public static void main(String[] args) {
+            double sumSalary=0;
+            double minSalary=Double.MAX_VALUE;
+            double maxSalary=Double.MIN_VALUE;
         // Read employee records into ArrayList
         ArrayList<Employee> emp = Employee.readEmployeeRecords();
         Collections.sort(emp,new MyComparator());
         System.out.println("Display employee details After sort");
         for (Employee employee : emp) {
+            
+   
             System.out.println("ID: " + employee.getId());
             System.out.println("Name: " + employee.getName());
             System.out.println("Designation: " + employee.getDesignation());
             System.out.println("Salary: " + employee.getSalary());
             System.out.println("Experience: " + employee.getExperience());
             System.out.println("------------------------");
+            if(minSalary>employee.getSalary())
+            minSalary=employee.getSalary();
+            if(maxSalary<employee.getSalary())
+            maxSalary=employee.getSalary();
+            sumSalary+=employee.getSalary();
         }
+        System.out.println("min salary: " + minSalary);
+            System.out.println("max salary: " + maxSalary);
+
+            System.out.println("Total salary: " + sumSalary);
+             System.out.println("Average salary: " + sumSalary/emp.size());
     }
 }
 class MyComparator implements Comparator<Employee>{
