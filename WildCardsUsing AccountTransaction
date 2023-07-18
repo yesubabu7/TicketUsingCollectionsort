@@ -1,4 +1,162 @@
 
+(1) aproch
+
+import java.util.ArrayList;
+import java.util.List;
+
+class Account {
+    private int balance = 0;
+    private double minBalance = Double.MAX_VALUE;
+    private double maxBalance = Double.MIN_VALUE;
+    private int accountNumber;
+    protected List<Transaction> transactions;
+
+    public Account(int accountNumber) {
+        this.accountNumber = accountNumber;
+        this.transactions = new ArrayList<>();
+    }
+
+    public int getAccountNumber() {
+        return accountNumber;
+    }
+
+    public double getBalance() {
+        return balance;
+    }
+
+    public void deposit(double amount) {
+        balance += amount;
+        process();
+    }
+
+    public double minBalance() {
+        return minBalance;
+    }
+
+    public double maxBalance() {
+        return maxBalance;
+    }
+
+    public void withdraw(double amount) {
+        if (balance >= amount) {
+            balance -= amount;
+            process();
+        } else {
+            System.out.println("Insufficient balance.");
+        }
+    }
+
+    public void process() {
+        if (minBalance >= balance) {
+            minBalance = balance;
+        }
+        if (maxBalance <= balance) {
+            maxBalance = balance;
+        }
+    }
+
+    public void addTransaction(Transaction trans) {
+        double amt = trans.getAmount();
+        if (trans.getType().equals("withdraw"))
+            withdraw(amt);
+        else {
+            deposit(amt);
+        }
+        transactions.add(trans);
+    }
+}
+
+class SavingsAccount extends Account {
+    public SavingsAccount(int accountNumber) {
+        super(accountNumber);
+    }
+}
+
+class CurrentAccount extends Account {
+    public CurrentAccount(int accountNumber) {
+        super(accountNumber);
+    }
+}
+
+class Transaction {
+    private String type;
+    private double amount;
+
+    public Transaction(String type, double amount) {
+        this.type = type;
+        this.amount = amount;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
+}
+
+class GenericTransaction<T extends Account> {
+    public void processTransaction(T account, Transaction transaction) {
+        account.addTransaction(transaction);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        SavingsAccount savingsAccount1 = new SavingsAccount(1);
+        SavingsAccount savingsAccount2 = new SavingsAccount(2);
+        CurrentAccount currentAccount1 = new CurrentAccount(3);
+
+        Transaction t1 = new Transaction("Deposit", 1000.0);
+        Transaction t2 = new Transaction("withdraw", 300.0);
+        Transaction t3 = new Transaction("Deposit", 2000.0);
+        Transaction t4 = new Transaction("withdraw", 300.0);
+        Transaction t5 = new Transaction("deposit", 1000.0);
+        Transaction t6 = new Transaction("withdraw", 900.0);
+
+        GenericTransaction<SavingsAccount> genericTransaction1 = new GenericTransaction<>();
+        genericTransaction1.processTransaction(savingsAccount1, t1);
+        genericTransaction1.processTransaction(savingsAccount1, t2);
+
+        GenericTransaction<SavingsAccount> genericTransaction2 = new GenericTransaction<>();
+        genericTransaction2.processTransaction(savingsAccount2, t3);
+        genericTransaction2.processTransaction(savingsAccount2, t4);
+
+        GenericTransaction<CurrentAccount> genericTransaction3 = new GenericTransaction<>();
+        genericTransaction3.processTransaction(currentAccount1, t5);
+        genericTransaction3.processTransaction(currentAccount1, t6);
+
+        ArrayList<Account> accounts = new ArrayList<>();
+        accounts.add(savingsAccount1);
+        accounts.add(savingsAccount2);
+        accounts.add(currentAccount1);
+
+        displayBalanceProfile(accounts);
+    }
+
+    public static void displayBalanceProfile(ArrayList<? extends Account> accounts) {
+        for (Account account : accounts) {
+            System.out.println("Account Number: " + account.getAccountNumber());
+            System.out.println("Min Balance: " + account.minBalance());
+
+            System.out.println("Max Balance: " + account.maxBalance());
+            System.out.println("present Balance: " + account.getBalance());
+            System.out.println();
+            System.out.println("Transactions  ");
+            for (Transaction t : account.transactions) {
+
+                System.out.println("\ntype of transaction is " + t.getType());
+                System.out.println("transaction  amount  " + t.getAmount());
+            }
+            System.out.println("------------------------");
+        }
+    }
+}
+
+
+***********************************************************************************************************************************************
+(2) approch
 
 import java.util.ArrayList;
 import java.util.List;
