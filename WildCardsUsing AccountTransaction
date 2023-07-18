@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 class Account {
-    int balance = 0;
+    private int balance = 0;
     private double minBalence=Double.MAX_VALUE;
     private double maxBalence=Double.MIN_VALUE;
     private int accountNumber;
@@ -19,7 +19,7 @@ class Account {
         return accountNumber;
     }
     
-    public int getBalance() {
+    public double  getBalance() {
         return balance;
     }
      public void deposit(double amount) {
@@ -128,7 +128,14 @@ public class Main {
             System.out.println("Min Balance: " + account.minBalence());
              
             System.out.println("Max Balance: " + account.maxBalence());
-            System.out.println("present Balance: " + account.balance);
+            System.out.println("present Balance: " + account.getBalance());
+             System.out.println();
+            System.out.println("Transactions  ");
+            for(Transaction t:account.transactions){
+               
+                System.out.println("\ntype of transaction is "+ t.getType());
+                System.out.println("transaction  amount  "+ t.getAmount());
+            }
             System.out.println("------------------------");
         }
     }
