@@ -1,0 +1,35 @@
+interface MathOperation {
+    int oper(int a, int b);
+}
+
+public class Main {
+    public static void main(String[] args) {
+        // Using lambda expressions to implement MathOperation
+        MathOperation addition = (a, b) -> a + b;
+        MathOperation subtraction = (a, b) -> a - b;
+        MathOperation multiplication = (a, b) -> a * b;
+
+        int result1 = operateMath(5, 3, addition);
+        int result2 = operateMath(10, 4, subtraction);
+        int result3 = operateMath(8, 2, multiplication);
+
+        System.out.println("Addition: " + result1);
+        System.out.println("Subtraction: " + result2);
+        System.out.println("Multiplication: " + result3);
+        System.out.println(addition.oper(3,4));
+    }
+
+    public static int operateMath(int a, int b, MathOperation mathOperation) {
+        return mathOperation.oper(a, b);
+    }
+}
+
+
+
+I apologize for the confusion in my previous response. You are right; addition, subtraction, and multiplication are objects of anonymous 
+classes implementing the MathOperation interface using lambda expressions.
+
+In Java, lambda expressions are a concise way to represent an instance of a functional interface (an interface with a single abstract method).
+When we define a lambda expression, the compiler creates an anonymous class instance that implements the functional interface's abstract method.
+
+
