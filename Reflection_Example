@@ -9,6 +9,7 @@ public class Main {
     System.out.println("Getting All Methods");
         for (Method method : methods) {
             // Get method name
+            System.out.println("entire  method Name "+method);
             String methodName = method.getName();
 
             // Get return type
