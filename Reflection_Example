@@ -1,0 +1,35 @@
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Class<?> collectionsClass = Object.class;
+        Method[] methods = collectionsClass.getDeclaredMethods();
+    System.out.println("Getting All Methods");
+        for (Method method : methods) {
+            // Get method name
+            String methodName = method.getName();
+
+            // Get return type
+            Class<?> returnType = method.getReturnType();
+            String returnTypeStr = returnType.getSimpleName();
+
+            // Get argument types
+            Class<?>[] parameterTypes = method.getParameterTypes();
+            StringBuilder argumentTypesStr = new StringBuilder();
+            for (int i = 0; i < parameterTypes.length; i++) {
+                argumentTypesStr.append(parameterTypes[i].getSimpleName());
+                if (i < parameterTypes.length - 1) {
+                    argumentTypesStr.append(", ");
+                }
+            }
+
+            // Get method modifiers (e.g., public, static, etc.)
+            int modifiers = method.getModifiers();
+            String modifiersStr = Modifier.toString(modifiers);
+
+            System.out.println(modifiersStr+" "+"<" + returnTypeStr + "> " + methodName + "(" + argumentTypesStr + ")");
+        }
+    }
+}
