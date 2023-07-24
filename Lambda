@@ -33,3 +33,50 @@ In Java, lambda expressions are a concise way to represent an instance of a func
 When we define a lambda expression, the compiler creates an anonymous class instance that implements the functional interface's abstract method.
 
 
+
+
+            ANANOMOUS AND LAMDA
+---------------- --------------------------------
+
+
+public interface Interest {
+    void calInt();
+
+    static double calculateStdInt(double pr, int nm, double rate) {
+        return pr * nm * rate / 1200;
+    }
+}
+
+public class InterestCalculator {
+
+    public static void main(String[] args) {
+
+        // Using anonymous inner class
+        Interest anonymousInnerClassInterest = new Interest() {
+            @Override
+            public void calInt() {
+                double principal = 50000;
+                int numberOfMonths = 12;
+                double rateOfInterest = 8.5;
+                double simpleInterest = Interest.calculateStdInt(principal, numberOfMonths, rateOfInterest);
+                System.out.println("Simple Interest using anonymous inner class: " + simpleInterest);
+            }
+        };
+
+        anonymousInnerClassInterest.calInt();
+
+        // Using lambda expression
+        Interest lambdaInterest = () -> {
+            double principal = 50000;
+            int numberOfMonths = 12;
+            double rateOfInterest = 8.5;
+            double simpleInterest = Interest.calculateStdInt(principal, numberOfMonths, rateOfInterest);
+            System.out.println("Simple Interest using lambda expression: " + simpleInterest);
+        };
+
+        lambdaInterest.calInt();
+    }
+}
+
+
+
