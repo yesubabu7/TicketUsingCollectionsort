@@ -39,7 +39,7 @@ When we define a lambda expression, the compiler creates an anonymous class inst
 ---------------- --------------------------------
 
 
-public interface Interest {
+ interface Interest {
     void calInt();
 
     static double calculateStdInt(double pr, int nm, double rate) {
@@ -47,7 +47,7 @@ public interface Interest {
     }
 }
 
-public class InterestCalculator {
+public class Main {
 
     public static void main(String[] args) {
 
