@@ -158,3 +158,97 @@ class MyComparator implements Comparator<Employee>{
     }
     
 }
+
+
+*******************************************************************************************
+
+
+
+//2:09
+
+import java.util.*;
+import java.io.*;
+class employee implements Serializable{
+    
+    int id;
+    String ename;
+    String desig;
+    int expe;
+    employee(int id,String ename,String desig,int expe){
+        this.id=id;
+        this.ename=ename;
+        this.desig=desig;
+        this.expe=expe;
+    }
+    static ArrayList<employee> readFromFile(){
+        ArrayList<employee> emp=new ArrayList<>();
+        try{
+            BufferedReader b=new BufferedReader(new FileReader("emp.txt"));
+            String s=b.readLine();
+            while(s!=null){
+              employee e=getEmployeeData(s);
+              emp.add(e);
+            s=b.readLine();
+            }
+            
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+        return emp;
+    }
+    static employee getEmployeeData(String st){
+        String a[]=st.split(",");
+        try{
+            int ide=Integer.parseInt(a[0]);
+            String enam=a[1];
+            String des=a[2];
+            int exp=Integer.parseInt(a[3]);
+             return new employee(ide,enam,des,exp);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+       return null;
+    }
+    
+}
+class Main{
+    public static void main(String args[]){
+        ArrayList<employee> totalEmp=employee.readFromFile();
+        for(employee e:totalEmp){
+            System.out.println("id "+e.id+" name "+e.ename+" designation "+e.desig+" experience "+e.expe);
+        }
+        Collections.sort(totalEmp,(e1,e2) -> {
+            Integer i1=(Integer)e1.expe;
+            Integer i2=(Integer)e2.expe;
+            return i1.compareTo(i2);
+            
+        }
+        );
+        
+        try{
+            ObjectOutputStream ser=new ObjectOutputStream(new FileOutputStream("yesu.ser"));
+            ser.writeObject(totalEmp);
+            System.out.println("SERIALZATION COMPLETED");
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+        System.out.println("PRINTING BELOW DESERIALZATION PROCESS");
+        try{
+        ObjectInputStream sei=new ObjectInputStream(new FileInputStream("yesu.ser"));
+        ArrayList<employee> deserial=(ArrayList<employee>)sei.readObject();
+        for(employee e:deserial){
+            System.out.println("id "+e.id+" name "+e.ename+" designation "+e.desig+" experience "+e.expe);
+        }
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+        
+    }
+}
+
+
+
