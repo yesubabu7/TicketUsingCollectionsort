@@ -136,7 +136,7 @@ BEGIN
         -- Get the specific day of the week as an integer (Monday = 1, Tuesday = 2, etc.)
         SET nextDayOfWeek = EXTRACT(DOW FROM nextDate);
 		
-	call getdata(nextDayOfWeek, inDoctorID);
+	call getdata(nextDayOfWeek, inDoctorID, IN inProcessDate DATE,in nextDate,in remainingDays);
 
         -- You can use nextDayOfWeek as needed for further processing
         
@@ -153,3 +153,68 @@ END;
 DELIMITER ;
 
 ************************************************************************
+
+DELIMITER //
+
+CREATE PROCEDURE getdata(IN inNextDayOfWeek INT, IN inDoctorID INT, IN inProcessDate DATE, IN nextDate DATE, IN remainingDays INT)
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE doctorScheduleID INT;
+    DECLARE doctorAvailableDays VARCHAR(7); -- Assuming DoctorAvailableDays is a VARCHAR with a length of 7
+    DECLARE doctoravailablefrom_var TIME;
+    DECLARE doctoravailableto_var TIME;
+    DECLARE doctoravilableslot_var INT;
+    DECLARE updatedTimeFrom TIME;
+    DECLARE updatedTimeTo TIME;
+
+    -- Cursor to fetch DoctorSchedule_ID and DoctorAvailableDays
+    DECLARE scheduleCursor CURSOR FOR
+        SELECT DoctorSchedule_ID, doctorschedule
+        FROM DoctorSchedule_Bhaskar
+        WHERE DoctorID = inDoctorID;
+
+    -- Declare exit handler
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    -- Initialize matchingDates
+    SET matchingDates = '';
+
+    -- Loop through DoctorSchedule_Bhaskar records for the given doctor
+    OPEN scheduleCursor;
+    read_loop: LOOP
+        FETCH scheduleCursor INTO doctorScheduleID, doctorAvailableDays;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        -- Check if nextDayOfWeek is found in the DoctorAvailableDays
+        IF SUBSTRING(doctorAvailableDays, inNextDayOfWeek, 1) = '1' THEN
+            SELECT doctoravailablefrom, doctoravailableto, doctoravilableslot
+            INTO doctoravailablefrom_var, doctoravailableto_var, doctoravilableslot_var
+            FROM DoctorSchedule_Bhaskar
+            WHERE DoctorSchedule_ID = doctorScheduleID;
+
+            -- Calculate updatedTimeFrom and updatedTimeTo
+            SET updatedTimeFrom = doctoravailablefrom_var;
+            SET updatedTimeTo = TIME_ADD(doctoravailablefrom_var, INTERVAL doctoravilableslot_var MINUTE);
+
+            -- Update remainingDays for further processing
+            SET remainingDays = remainingDays - 1;
+            
+            -- Call the Updating procedure with the relevant data
+            CALL Updating(inDoctorID, updatedTimeFrom, updatedTimeTo, nextDate);
+
+            -- Optionally, you can accumulate matchingDates or use it as needed
+            -- SET matchingDates = CONCAT(matchingDates, ',', doctorScheduleID);
+        END IF;
+    END LOOP;
+
+    -- Close the cursor
+    CLOSE scheduleCursor;
+
+    -- You can use matchingDates, updatedTimeFrom, updatedTimeTo, and remainingDays as needed
+END;
+//
+
+DELIMITER ;
+
