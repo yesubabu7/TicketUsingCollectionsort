@@ -54,138 +54,117 @@ GROUP BY
 
 
 **********************************************************************************
-DELIMITER //
+CREATE OR REPLACE FUNCTION CalculateWorkingDays() RETURNS VARCHAR(500) AS $$
+DECLARE 
+    done BOOLEAN := FALSE;
+    v_doctorID INT;
+    processDate DATE := '2023-09-04';  -- Set your desired date here
+    result VARCHAR(500) := '';
+    doctorRecord RECORD;  -- Declare a record variable to hold the query result
 
-CREATE PROCEDURE CalculateWorkingDays()
 BEGIN
-    DECLARE done INT DEFAULT FALSE;
-    DECLARE doctorID INT;
-    DECLARE workingDaysSummary VARCHAR(500);  -- Variable to store working days summary
-    DECLARE processDate DATE;  -- Declare a variable for the date
-
-    -- Set the processDate to '04-09-2023' (you can change it to your desired date)
-    SET processDate = '2023-09-04';
-
-    -- Cursor to fetch DoctorID and WorkingDaysCount
-    DECLARE doctorCursor CURSOR FOR
-        SELECT DoctorID, SUM(length(regexp_replace(DoctorAvailableDays::text, '0', '', 'g'))) AS WorkingDaysCount
-        FROM DoctorScheduleyesu
-        GROUP BY DoctorID;
-
-    -- Declare exit handler
-    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
-
     -- Loop through DoctorID and WorkingDaysCount
-    OPEN doctorCursor;
-    read_loop: LOOP
-        FETCH doctorCursor INTO doctorID, WorkingDaysCount;
-        IF done THEN
-            LEAVE read_loop;
-        END IF;
-		
-        -- Call the process procedure for each doctor with processDate as a parameter
-        CALL process(doctorID, WorkingDaysCount, processDate);
+    FOR doctorRecord IN 
+        SELECT ds.DoctorID, SUM(length(regexp_replace(ds.DoctorAvailableDays::text, '0', '', 'g'))) AS WorkingDaysCount
+        FROM DoctorScheduleyesu ds
+        GROUP BY ds.DoctorID
+    LOOP
+        v_doctorID := doctorRecord.DoctorID;
+        -- Call the process function for each doctor with processDate as a parameter
+        PERFORM process(v_doctorID, doctorRecord.WorkingDaysCount, processDate);
     END LOOP;
-
-    -- Close the cursor
-    CLOSE doctorCursor;
-
-    -- Display the workingDaysSummary
-    SELECT workingDaysSummary;
+    
+    RETURN 'Success'; -- Replace with the actual result you want to return
 END;
-//
+$$ LANGUAGE plpgsql;
 
-DELIMITER ;
-**************************************************************************************
-DELIMITER //
 
-CREATE PROCEDURE process(IN inDoctorID INT, IN inWorkingDaysCount INT, IN inProcessDate DATE)
+
+
+SELECT CalculateWorkingDays();
+
+
+
+
+
+CREATE OR REPLACE FUNCTION process(
+    IN inDoctorID INT, 
+    IN inWorkingDaysCount BIGINT, 
+    IN inProcessDate DATE
+) 
+RETURNS VOID AS $$
+DECLARE 
+    done BOOLEAN := FALSE;
+    doctorAvailabilityID INT;
+    totalDays INT;
+    remainingDays INT;
+    nextDate DATE;  -- Variable to store the calculated date
+    availabilityRecord RECORD;
+    processdate DATE; -- Declare processdate variable
+    nextDayOfWeek INT; -- Declare nextDayOfWeek variable
+
 BEGIN
-    DECLARE done INT DEFAULT FALSE;
-    DECLARE doctorAvailabilityID INT;
-    DECLARE totalDays INT;
-    DECLARE remainingDays INT;
-    DECLARE nextDate DATE;  -- Variable to store the calculated date
+    -- Initialize remainingDays with totalDays
+   -- You should initialize it to 0
 
-    -- Cursor to fetch totalDays from DoctorAvailability
-    DECLARE availabilityCursor CURSOR FOR
+    -- Cursor to fetch DaysToBook from DoctorAvailability
+    FOR availabilityRecord IN 
         SELECT DaysToBook
         FROM DoctorAvailability
-        WHERE DoctorID = inDoctorID;
-
-    -- Declare exit handler
-    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
-
-    -- Initialize remainingDays with totalDays
-    SET totalDays = DaysToBook;
-
-    -- Loop through DoctorAvailability records for the given doctor
-    OPEN availabilityCursor;
-    read_loop: LOOP
-        FETCH availabilityCursor INTO totalDays;
-        IF done THEN
-            LEAVE read_loop;
-        END IF;
-
-        -- Calculate remainingDays by subtracting inWorkingDaysCount
-        SET remainingDays = totalDays - inWorkingDaysCount;
+        WHERE DoctorID = inDoctorID
+    LOOP
+        totalDays := availabilityRecord.DaysToBook;
         
+        -- Set the remainingDays to a specific value (in this case, 5)
+        SElect  (totalDays-inWorkingDaysCount) into remainingDays;
+
         -- Calculate the nextDate by adding remainingDays to inProcessDate
-        SET nextDate = inProcessDate + INTERVAL '1 day' * remainingDays;
+        processdate := inProcessDate + remainingDays;
 
         -- Get the specific day of the week as an integer (Monday = 1, Tuesday = 2, etc.)
-        SET nextDayOfWeek = EXTRACT(DOW FROM nextDate);
-		
-	call getdata(nextDayOfWeek, inDoctorID, IN inProcessDate DATE,in nextDate,in remainingDays);
+        SELECT EXTRACT(DOW FROM processdate) INTO nextDayOfWeek;
+
+        -- Call the getdata function for further processing
+        PERFORM getdata(nextDayOfWeek, inDoctorID, processdate, remainingDays);
 
         -- You can use nextDayOfWeek as needed for further processing
-        
     END LOOP;
-
-    -- Close the cursor
-    CLOSE availabilityCursor;
-
-    -- You can use remainingDays, nextDate, and nextDayOfWeek as needed
-
 END;
-//
+$$ LANGUAGE plpgsql;
 
-DELIMITER ;
 
-************************************************************************
 
-DELIMITER //
 
-CREATE PROCEDURE getdata(IN inNextDayOfWeek INT, IN inDoctorID INT, IN inProcessDate DATE, IN nextDate DATE, IN remainingDays INT)
+
+
+
+
+CREATE OR REPLACE FUNCTION getdata(
+    IN inNextDayOfWeek INT, 
+    IN inDoctorID INT, 
+    IN inProcessDate DATE, 
+    IN remainingDays INT
+) 
+RETURNS SETOF DoctorScheduleInfo AS $$
+DECLARE 
+    done INT;
+    doctorScheduleID INT;
+    doctorAvailableDays VARCHAR(7); -- Assuming DoctorAvailableDays is a VARCHAR with a length of 7
+    doctoravailablefrom_var TIME;
+    doctoravailableto_var TIME;
+    doctoravilableslot_var INT;
+
+    scheduleRecord RECORD;  -- Declare a record variable
+
 BEGIN
-    DECLARE done INT DEFAULT FALSE;
-    DECLARE doctorScheduleID INT;
-    DECLARE doctorAvailableDays VARCHAR(7); -- Assuming DoctorAvailableDays is a VARCHAR with a length of 7
-    DECLARE doctoravailablefrom_var TIME;
-    DECLARE doctoravailableto_var TIME;
-    DECLARE doctoravilableslot_var INT;
-    DECLARE updatedTimeFrom TIME;
-    DECLARE updatedTimeTo TIME;
-
     -- Cursor to fetch DoctorSchedule_ID and DoctorAvailableDays
-    DECLARE scheduleCursor CURSOR FOR
-        SELECT DoctorSchedule_ID, doctorschedule
+    FOR scheduleRecord IN 
+        SELECT doctorid, doctorschedule
         FROM DoctorSchedule_Bhaskar
-        WHERE DoctorID = inDoctorID;
-
-    -- Declare exit handler
-    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
-
-    -- Initialize matchingDates
-    SET matchingDates = '';
-
-    -- Loop through DoctorSchedule_Bhaskar records for the given doctor
-    OPEN scheduleCursor;
-    read_loop: LOOP
-        FETCH scheduleCursor INTO doctorScheduleID, doctorAvailableDays;
-        IF done THEN
-            LEAVE read_loop;
-        END IF;
+        WHERE DoctorID = inDoctorID
+    LOOP
+        doctorScheduleID := scheduleRecord.doctorid;
+        doctorAvailableDays := scheduleRecord.doctorschedule;
 
         -- Check if nextDayOfWeek is found in the DoctorAvailableDays
         IF SUBSTRING(doctorAvailableDays, inNextDayOfWeek, 1) = '1' THEN
@@ -195,26 +174,36 @@ BEGIN
             WHERE DoctorSchedule_ID = doctorScheduleID;
 
             -- Calculate updatedTimeFrom and updatedTimeTo
-            SET updatedTimeFrom = doctoravailablefrom_var;
-            SET updatedTimeTo = TIME_ADD(doctoravailablefrom_var, INTERVAL doctoravilableslot_var MINUTE);
-
-            -- Update remainingDays for further processing
-            SET remainingDays = remainingDays - 1;
-            
-            -- Call the Updating procedure with the relevant data
-            CALL Updating(inDoctorID, updatedTimeFrom, updatedTimeTo, nextDate);
+            doctoravailablefrom_var := doctoravailablefrom_var;
+            doctoravailableto_var := doctoravailablefrom_var + (doctoravilableslot_var || ' minutes')::INTERVAL;
 
             -- Optionally, you can accumulate matchingDates or use it as needed
-            -- SET matchingDates = CONCAT(matchingDates, ',', doctorScheduleID);
+            -- matchingDates := CONCAT(matchingDates, ',', doctorScheduleID);
+
+            -- Return the data as a row of the custom type
+            RETURN NEXT (doctoravailablefrom_var, doctoravailableto_var, doctoravilableslot_var);
+
+            -- Perform any other processing or calculations you need
         END IF;
     END LOOP;
 
-    -- Close the cursor
-    CLOSE scheduleCursor;
-
-    -- You can use matchingDates, updatedTimeFrom, updatedTimeTo, and remainingDays as needed
+    -- Done looping, close the function
+    RETURN;
 END;
-//
+$$ LANGUAGE plpgsql;
 
-DELIMITER ;
 
+
+sELECT *
+        FROM DoctorSchedule_Bhaskar;
+		
+		
+-- Define a custom type to hold the data
+CREATE TYPE DoctorScheduleInfo AS (
+    doctoravailablefrom TIME,
+    doctoravailableto TIME,
+    doctoravilableslot INT
+);
+
+        
+DROP FUNCTION getdata(integer,integer,date,integer);
