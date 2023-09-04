@@ -1,0 +1,155 @@
+CREATE TABLE DoctorSchedule (
+    DoctorID INT,
+    DoctorSlotIndex INT,
+    DoctorAvailableFrom TIME,
+    DoctorAvailableTo TIME,
+    DoctorAvailableDays INT,  -- Use numbers to represent days (e.g., 123 for Mon, Tue, Sat)
+    SlotsPerDay INT  -- Number of slots per day
+);
+
+INSERT INTO DoctorSchedule (DoctorID, DoctorSlotIndex, DoctorAvailableFrom, DoctorAvailableTo, DoctorAvailableDays, SlotsPerDay)
+VALUES
+    (1, 2, '08:00:00', '17:00:00', 123, 10),  -- Monday, Tuesday, Saturday, 10 slots per day
+    (2, 2, '09:00:00', '16:00:00', 124, 8),   -- Monday, Wednesday, Friday, 8 slots per day
+    (3, 2, '10:00:00', '15:00:00', 23, 6),    -- Tuesday, Thursday, 6 slots per day
+    (4, 2, '08:30:00', '18:00:00', 24, 9),    -- Wednesday, Friday, 9 slots per day
+    (5, 2, '11:00:00', '14:00:00', 3, 7),     -- Thursday, 7 slots per day
+    (1, 1, '08:00:00', '17:00:00', 123, 10),  -- Monday, Tuesday, Saturday, 10 slots per day
+    (2, 1, '09:00:00', '16:00:00', 124, 8),   -- Monday, Wednesday, Friday, 8 slots per day
+    (3, 1, '10:00:00', '15:00:00', 23, 6),    -- Tuesday, Thursday, 6 slots per day
+    (4, 1, '08:30:00', '18:00:00', 24, 9),    -- Wednesday, Friday, 9 slots per day
+    (5, 1, '11:00:00', '14:00:00', 3, 7);     -- Thursday, 7 slots per day
+
+
+CREATE TABLE DoctorAvailability (
+    DoctorID INT,
+    DaysToBook INT
+);
+
+
+-- Insert data into DoctorAvailability
+INSERT INTO DoctorAvailability (DoctorID, DaysToBook)
+VALUES
+    (1, 10),  -- Doctor 1 allows 10 days to be booked
+    (2, 7),   -- Doctor 2 allows 7 days to be booked
+    (3, 14);  -- Doctor 3 allows 14 days to be booked
+
+
+
+
+
+
+
+*****************************count working days doctoor***********************
+SELECT
+    DoctorID,
+    SUM(length(regexp_replace(DoctorAvailableDays::text, '0', '', 'g'))) AS WorkingDaysCount
+FROM
+    DoctorScheduleyesu
+GROUP BY
+    DoctorID;
+
+
+
+
+
+**********************************************************************************
+DELIMITER //
+
+CREATE PROCEDURE CalculateWorkingDays()
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE doctorID INT;
+    DECLARE workingDaysSummary VARCHAR(500);  -- Variable to store working days summary
+    DECLARE processDate DATE;  -- Declare a variable for the date
+
+    -- Set the processDate to '04-09-2023' (you can change it to your desired date)
+    SET processDate = '2023-09-04';
+
+    -- Cursor to fetch DoctorID and WorkingDaysCount
+    DECLARE doctorCursor CURSOR FOR
+        SELECT DoctorID, SUM(length(regexp_replace(DoctorAvailableDays::text, '0', '', 'g'))) AS WorkingDaysCount
+        FROM DoctorScheduleyesu
+        GROUP BY DoctorID;
+
+    -- Declare exit handler
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    -- Loop through DoctorID and WorkingDaysCount
+    OPEN doctorCursor;
+    read_loop: LOOP
+        FETCH doctorCursor INTO doctorID, WorkingDaysCount;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+		
+        -- Call the process procedure for each doctor with processDate as a parameter
+        CALL process(doctorID, WorkingDaysCount, processDate);
+    END LOOP;
+
+    -- Close the cursor
+    CLOSE doctorCursor;
+
+    -- Display the workingDaysSummary
+    SELECT workingDaysSummary;
+END;
+//
+
+DELIMITER ;
+**************************************************************************************
+DELIMITER //
+
+CREATE PROCEDURE process(IN inDoctorID INT, IN inWorkingDaysCount INT, IN inProcessDate DATE)
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE doctorAvailabilityID INT;
+    DECLARE totalDays INT;
+    DECLARE remainingDays INT;
+    DECLARE nextDate DATE;  -- Variable to store the calculated date
+
+    -- Cursor to fetch totalDays from DoctorAvailability
+    DECLARE availabilityCursor CURSOR FOR
+        SELECT DaysToBook
+        FROM DoctorAvailability
+        WHERE DoctorID = inDoctorID;
+
+    -- Declare exit handler
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    -- Initialize remainingDays with totalDays
+    SET totalDays = DaysToBook;
+
+    -- Loop through DoctorAvailability records for the given doctor
+    OPEN availabilityCursor;
+    read_loop: LOOP
+        FETCH availabilityCursor INTO totalDays;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        -- Calculate remainingDays by subtracting inWorkingDaysCount
+        SET remainingDays = totalDays - inWorkingDaysCount;
+        
+        -- Calculate the nextDate by adding remainingDays to inProcessDate
+        SET nextDate = inProcessDate + INTERVAL '1 day' * remainingDays;
+
+        -- Get the specific day of the week as an integer (Monday = 1, Tuesday = 2, etc.)
+        SET nextDayOfWeek = EXTRACT(DOW FROM nextDate);
+		
+	call getdata(nextDayOfWeek, inDoctorID);
+
+        -- You can use nextDayOfWeek as needed for further processing
+        
+    END LOOP;
+
+    -- Close the cursor
+    CLOSE availabilityCursor;
+
+    -- You can use remainingDays, nextDate, and nextDayOfWeek as needed
+
+END;
+//
+
+DELIMITER ;
+
+************************************************************************
