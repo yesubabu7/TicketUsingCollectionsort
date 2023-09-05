@@ -1,79 +1,35 @@
-CREATE TABLE DoctorSchedule (
-    DoctorID INT,
-    DoctorSlotIndex INT,
-    DoctorAvailableFrom TIME,
-    DoctorAvailableTo TIME,
-    DoctorAvailableDays INT,  -- Use numbers to represent days (e.g., 123 for Mon, Tue, Sat)
-    SlotsPerDay INT  -- Number of slots per day
-);
+SELECT CalculateWorkingDays(1);
 
-INSERT INTO DoctorSchedule (DoctorID, DoctorSlotIndex, DoctorAvailableFrom, DoctorAvailableTo, DoctorAvailableDays, SlotsPerDay)
-VALUES
-    (1, 2, '08:00:00', '17:00:00', 123, 10),  -- Monday, Tuesday, Saturday, 10 slots per day
-    (2, 2, '09:00:00', '16:00:00', 124, 8),   -- Monday, Wednesday, Friday, 8 slots per day
-    (3, 2, '10:00:00', '15:00:00', 23, 6),    -- Tuesday, Thursday, 6 slots per day
-    (4, 2, '08:30:00', '18:00:00', 24, 9),    -- Wednesday, Friday, 9 slots per day
-    (5, 2, '11:00:00', '14:00:00', 3, 7),     -- Thursday, 7 slots per day
-    (1, 1, '08:00:00', '17:00:00', 123, 10),  -- Monday, Tuesday, Saturday, 10 slots per day
-    (2, 1, '09:00:00', '16:00:00', 124, 8),   -- Monday, Wednesday, Friday, 8 slots per day
-    (3, 1, '10:00:00', '15:00:00', 23, 6),    -- Tuesday, Thursday, 6 slots per day
-    (4, 1, '08:30:00', '18:00:00', 24, 9),    -- Wednesday, Friday, 9 slots per day
-    (5, 1, '11:00:00', '14:00:00', 3, 7);     -- Thursday, 7 slots per day
+select * from DoctorSchedule_Bhaskar;
+insert into ajayschedule values(20,1,123,'09:00:00','12:00:00',15);
+select * from  ajayappointmentslots;
+
+delete  from ajayappointmentslots;
+
+DROP FUNCTION CalculateWorkingDays();
 
 
-CREATE TABLE DoctorAvailability (
-    DoctorID INT,
-    DaysToBook INT
-);
-
-
--- Insert data into DoctorAvailability
-INSERT INTO DoctorAvailability (DoctorID, DaysToBook)
-VALUES
-    (1, 10),  -- Doctor 1 allows 10 days to be booked
-    (2, 7),   -- Doctor 2 allows 7 days to be booked
-    (3, 14);  -- Doctor 3 allows 14 days to be booked
-
-
-
-
-
-
-
-*****************************count working days doctoor***********************
-SELECT
-    DoctorID,
-    SUM(length(regexp_replace(DoctorAvailableDays::text, '0', '', 'g'))) AS WorkingDaysCount
-FROM
-    DoctorScheduleyesu
-GROUP BY
-    DoctorID;
-
-
-
-
-
-**********************************************************************************
-CREATE OR REPLACE FUNCTION CalculateWorkingDays() RETURNS VARCHAR(500) AS $$
+CREATE OR REPLACE FUNCTION CalculateWorkingDays(in ide INT) RETURNS VARCHAR(500) AS $$
 DECLARE 
     done BOOLEAN := FALSE;
     v_doctorID INT;
-    processDate DATE := '2023-09-04';  -- Set your desired date here
-    result VARCHAR(500) := '';
+    processDate DATE := current_date;  -- Set your desired date here
+    
     doctorRecord RECORD;  -- Declare a record variable to hold the query result
 
 BEGIN
     -- Loop through DoctorID and WorkingDaysCount
     FOR doctorRecord IN 
-        SELECT ds.DoctorID, SUM(length(regexp_replace(ds.DoctorAvailableDays::text, '0', '', 'g'))) AS WorkingDaysCount
-        FROM DoctorScheduleyesu ds
-        GROUP BY ds.DoctorID
+        SELECT doctorid
+        FROM DoctorSchedule_Bhaskar
+        WHERE doctorid = ide
+        
     LOOP
-        v_doctorID := doctorRecord.DoctorID;
+        v_doctorID := doctorRecord.doctorid;
         -- Call the process function for each doctor with processDate as a parameter
-        PERFORM process(v_doctorID, doctorRecord.WorkingDaysCount, processDate);
+        PERFORM process(v_doctorID);
     END LOOP;
-    
+   
     RETURN 'Success'; -- Replace with the actual result you want to return
 END;
 $$ LANGUAGE plpgsql;
@@ -81,53 +37,42 @@ $$ LANGUAGE plpgsql;
 
 
 
-SELECT CalculateWorkingDays();
-
-
-
-
 
 CREATE OR REPLACE FUNCTION process(
-    IN inDoctorID INT, 
-    IN inWorkingDaysCount BIGINT, 
-    IN inProcessDate DATE
+    IN inDoctorID INT
 ) 
 RETURNS VOID AS $$
 DECLARE 
     done BOOLEAN := FALSE;
     doctorAvailabilityID INT;
     totalDays INT;
-    remainingDays INT;
-    nextDate DATE;  -- Variable to store the calculated date
+     
     availabilityRecord RECORD;
     processdate DATE; -- Declare processdate variable
-    nextDayOfWeek INT; -- Declare nextDayOfWeek variable
+    DayOfDate INT; -- Declare DayOfDate variable
 
 BEGIN
-    -- Initialize remainingDays with totalDays
-   -- You should initialize it to 0
-
-    -- Cursor to fetch DaysToBook from DoctorAvailability
+    
     FOR availabilityRecord IN 
         SELECT DaysToBook
         FROM DoctorAvailability
         WHERE DoctorID = inDoctorID
     LOOP
+		raise notice 'process';
+		 RAISE NOTICE 'inDoctorID: %', inDoctorID;
+		
         totalDays := availabilityRecord.DaysToBook;
         
-        -- Set the remainingDays to a specific value (in this case, 5)
-        SElect  (totalDays-inWorkingDaysCount) into remainingDays;
-
-        -- Calculate the nextDate by adding remainingDays to inProcessDate
-        processdate := inProcessDate + remainingDays;
-
+        -- Set the processdate to the current date or your desired date
+        processdate := CURRENT_DATE; -- You can change this to your desired date
+        
         -- Get the specific day of the week as an integer (Monday = 1, Tuesday = 2, etc.)
-        SELECT EXTRACT(DOW FROM processdate) INTO nextDayOfWeek;
+        SELECT EXTRACT(DOW FROM processdate) INTO DayOfDate;
 
         -- Call the getdata function for further processing
-        PERFORM getdata(nextDayOfWeek, inDoctorID, processdate, remainingDays);
+        PERFORM getdata(DayOfDate, inDoctorID, processdate);
 
-        -- You can use nextDayOfWeek as needed for further processing
+        -- You can use DayOfDate as needed for further processing
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
@@ -137,16 +82,16 @@ $$ LANGUAGE plpgsql;
 
 
 
-fUNCTION GetData(
+
+
+CREATE OR REPLACE FUNCTION getdata(
     IN inNextDayOfWeek INT, 
     IN inDoctorID INT, 
-    IN inProcessDate DATE, 
-    IN nextDate DATE, 
-    IN remainingDays INT
+    IN inProcessDate DATE
 ) 
-RETURNS VARCHAR(500) AS $$
+RETURNS void AS $$
 DECLARE 
-    done INT;
+    done INT ;
     doctorScheduleID INT;
     doctorAvailableDays VARCHAR(7); -- Assuming DoctorAvailableDays is a VARCHAR with a length of 7
     doctoravailablefrom_var TIME;
@@ -154,61 +99,87 @@ DECLARE
     doctoravilableslot_var INT;
     updatedTimeFrom TIME;
     updatedTimeTo TIME;
+    TimeDifference time;
+    TotalSlots INT;
+	inN int :=inNextDayOfWeek;
     matchingDates VARCHAR(500) := '';  -- Initialize matchingDates as an empty string
 
     scheduleRecord RECORD;  -- Declare a record variable
 
 BEGIN
-    -- Initialize remainingDays with totalDays
-     -- You should initialize it to 0
-
     -- Cursor to fetch DoctorSchedule_ID and DoctorAvailableDays
-    FOR scheduleRecord IN 
-        SELECT DoctorSchedule_ID, doctorschedule
-        FROM DoctorSchedule_Bhaskar
+    FOR scheduleRecord IN
+		
+        SELECT doctorid, doctorschedule, doctoravailablefrom, doctoravailableto, doctoravailableslot
+        FROM  DoctorSchedule_Bhaskar
         WHERE DoctorID = inDoctorID
     LOOP
-        doctorScheduleID := scheduleRecord.DoctorSchedule_ID;
+		raise notice 'getdata';
+		
+        doctorScheduleID := scheduleRecord.doctorid;
         doctorAvailableDays := scheduleRecord.doctorschedule;
-
+        doctoravailablefrom_var := scheduleRecord.doctoravailablefrom;
+        doctoravailableto_var := scheduleRecord.doctoravailableto;
+        doctoravilableslot_var := scheduleRecord.doctoravailableslot;
+			RAISE NOTICE ' doctorAvailableDays: %', doctorAvailableDays;
+			raise notice 'inNextDayOfWeek %',inNextDayOfWeek;
         -- Check if nextDayOfWeek is found in the DoctorAvailableDays
-        IF SUBSTRING(doctorAvailableDays, inNextDayOfWeek, 1) = '1' THEN
-            SELECT doctoravailablefrom, doctoravailableto, doctoravilableslot
-            INTO doctoravailablefrom_var, doctoravailableto_var, doctoravilableslot_var
-            FROM DoctorSchedule_Bhaskar
-            WHERE DoctorSchedule_ID = doctorScheduleID;
-
-            -- Calculate updatedTimeFrom and updatedTimeTo
+        IF SUBSTRING(doctorAvailableDays, 1, 1) = '1' THEN
+			raise notice 'if in getdata';
+           
+			TimeDifference := doctoravailableto_var - doctoravailablefrom_var;
+			RAISE NOTICE 'timedifference: %', TimeDifference;
+			--TotalSlots := extract(epoch from TimeDifference):: int * (60/doctoravilableslot_var);
+			TotalSlots=4;
+			RAISE NOTICE 'totalslots: %', TotalSlots;
             updatedTimeFrom := doctoravailablefrom_var;
-            updatedTimeTo := updatedTimeFrom + (doctoravilableslot_var || ' minutes')::INTERVAL;
 
-            -- Update remainingDays for further processing
-            remainingDays := remainingDays - 1;
+            -- Use a loop to insert each time slot into the table
+            FOR i IN 1..TotalSlots LOOP
+				RAISE NOTICE 'in loop';
+                updatedTimeTo := updatedTimeFrom + (doctoravilableslot_var || ' minutes')::INTERVAL;
+				RAISE NOTICE 'TotalSlots: %', TotalSlots;
+				raise notice 'hii';
+				 
+                -- Insert the time slot into the ajayappointementslots table
+                INSERT INTO  ajayappointmentslots (slotdoctorid,slotdate,slotfrom,slotto,slotstatus)
+                VALUES (doctorScheduleID,inProcessDate, updatedTimeFrom, updatedTimeTo,'available');
 
-            -- Optionally, you can accumulate matchingDates or use it as needed
-            -- matchingDates := CONCAT(matchingDates, ',', doctorScheduleID);
-
-            -- Perform any other processing or calculations you need
+                -- Increment updatedTimeFrom for the next time slot
+                updatedTimeFrom := updatedTimeTo;
+            END LOOP;
         END IF;
     END LOOP;
-
-    -- You can return a specific value from the function or simply return matchingDates
-    RETURN matchingDates;
+	
 END;
 $$ LANGUAGE plpgsql;
 
 
 
-sELECT *
-        FROM DoctorSchedule_Bhaskar;
-		
-		
--- Define a custom type to hold the data
-CREATE TYPE DoctorScheduleInfo AS (
-    doctoravailablefrom TIME,
-    doctoravailableto TIME,
-    doctoravilableslot INT
-);
 
-        
-DROP FUNCTION getdata(integer,integer,date,integer);
+
+
+
+
+CREATE OR REPLACE FUNCTION process()
+RETURNS trigger AS $$
+
+   
+BEGIN
+    
+   perform CalculateWorkingDays(new.doctorid);
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+create trigger slotgenerationtrigger1
+after insert on yesu_Doctor_schedule for
+each row execute function process();
+
+alter table ajayschedule enable trigger slotgenerationtrigger1
+
+
+
+
+
