@@ -137,15 +137,14 @@ $$ LANGUAGE plpgsql;
 
 
 
-
-
-CREATE OR REPLACE FUNCTION getdata(
+fUNCTION GetData(
     IN inNextDayOfWeek INT, 
     IN inDoctorID INT, 
     IN inProcessDate DATE, 
+    IN nextDate DATE, 
     IN remainingDays INT
 ) 
-RETURNS SETOF DoctorScheduleInfo AS $$
+RETURNS VARCHAR(500) AS $$
 DECLARE 
     done INT;
     doctorScheduleID INT;
@@ -153,17 +152,23 @@ DECLARE
     doctoravailablefrom_var TIME;
     doctoravailableto_var TIME;
     doctoravilableslot_var INT;
+    updatedTimeFrom TIME;
+    updatedTimeTo TIME;
+    matchingDates VARCHAR(500) := '';  -- Initialize matchingDates as an empty string
 
     scheduleRecord RECORD;  -- Declare a record variable
 
 BEGIN
+    -- Initialize remainingDays with totalDays
+     -- You should initialize it to 0
+
     -- Cursor to fetch DoctorSchedule_ID and DoctorAvailableDays
     FOR scheduleRecord IN 
-        SELECT doctorid, doctorschedule
+        SELECT DoctorSchedule_ID, doctorschedule
         FROM DoctorSchedule_Bhaskar
         WHERE DoctorID = inDoctorID
     LOOP
-        doctorScheduleID := scheduleRecord.doctorid;
+        doctorScheduleID := scheduleRecord.DoctorSchedule_ID;
         doctorAvailableDays := scheduleRecord.doctorschedule;
 
         -- Check if nextDayOfWeek is found in the DoctorAvailableDays
@@ -174,21 +179,21 @@ BEGIN
             WHERE DoctorSchedule_ID = doctorScheduleID;
 
             -- Calculate updatedTimeFrom and updatedTimeTo
-            doctoravailablefrom_var := doctoravailablefrom_var;
-            doctoravailableto_var := doctoravailablefrom_var + (doctoravilableslot_var || ' minutes')::INTERVAL;
+            updatedTimeFrom := doctoravailablefrom_var;
+            updatedTimeTo := updatedTimeFrom + (doctoravilableslot_var || ' minutes')::INTERVAL;
+
+            -- Update remainingDays for further processing
+            remainingDays := remainingDays - 1;
 
             -- Optionally, you can accumulate matchingDates or use it as needed
             -- matchingDates := CONCAT(matchingDates, ',', doctorScheduleID);
-
-            -- Return the data as a row of the custom type
-            RETURN NEXT (doctoravailablefrom_var, doctoravailableto_var, doctoravilableslot_var);
 
             -- Perform any other processing or calculations you need
         END IF;
     END LOOP;
 
-    -- Done looping, close the function
-    RETURN;
+    -- You can return a specific value from the function or simply return matchingDates
+    RETURN matchingDates;
 END;
 $$ LANGUAGE plpgsql;
 
